@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miss Lilah A Laurel Gradebook</title>
+
+    <!-- This line links your HTML to your new lavender styles! -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <h1>🦄 Miss Lilah A Laurel Gradebook Portal</h1>
+    <p>Welcome to your classroom dashboard! Use the tools below to manage your students.</p>
+
+    <hr>
+
+    <!-- SECTION 1: SEARCH FOR A STUDENT -->
+    <h2>🔍 Look Up a Student</h2>
+    <form action="/search" method="GET">
+        <label for="student_id">Enter Student ID Number:</label>
+        <input type="number" id="student_id" name="student_id" placeholder="e.g. 1" required>
+        <button type="submit">Search Student</button>
+    </form>
+
+    <hr>
+
+    <!-- SECTION 2: ADD A NEW STUDENT -->
+    <h2>📝 Enroll a New Student</h2>
+    <form action="/add_student" method="POST">
+        <p>
+            <label for="first_name">First Name:</label><br>
+            <input type="text" id="first_name" name="first_name" placeholder="e.g. Billy" required>
+        </p>
+        <p>
+            <label for="last_name">Last Name:</label><br>
+            <input type="text" id="last_name" name="last_name" placeholder="e.g. Goat" required>
+        </p>
+        <p>
+            <label for="age">Age:</label><br>
+            <input type="number" id="age" name="age" placeholder="9" required>
+        </p>
+        <p>
+            <label for="grade_level">Grade Level:</label><br>
+            <input type="text" id="grade_level" name="grade_level" placeholder="3rd Grade" required>
+        </p>
+        <p>
+            <label for="math_grade">Math Grade:</label>
+            <input type="text" id="math_grade" name="math_grade" placeholder="A+">
+            
+            <label for="reading_grade">Reading Grade:</label>
+            <input type="text" id="reading_grade" name="reading_grade" placeholder="A">
+        </p>
+        <p>
+            <label for="notes">Teacher Report Card Notes:</label><br>
+            <textarea id="notes" name="notes" placeholder="How did they do in class today?" rows="3" cols="40"></textarea>
+        </p>
+        
+        <button type="submit">Add to Classroom List</button>
+    </form>
+
+
+<hr>
+
+<!-- SECTION 3: DYNAMIC SEARCH RESULTS Using Jinja(Template Logic) -->
+    
+    <!-- 1. IF AN ERROR HAPPENED (ID not found), SHOW THIS -->
+    {% if error %}
+        <p style="color: red; font-weight: bold;">⚠️ {{ error }}</p>
+    {% endif %}
+
+    <!-- 2. IF A STUDENT WAS FOUND, GENERATE THE REPORT CARD -->
+    {% if student %}
+        <h2>📊 Student Report Card</h2>
+        <div style="background: white; padding: 20px; border-radius: 8px; border: 2px dashed #4A4A4A;">
+            <p><strong>Name:</strong> {{ student.first_name }} {{ student.last_name }}</p>
+            <p><strong>Age:</strong> {{ student.age }}</p>
+            <p><strong>Grade Level:</strong> {{ student.grade_level }}</p>
+            <p><strong>Math Grade:</strong> {{ student.math }}</p>
+            <p><strong>Reading Grade:</strong> {{ student.reading }}</p>
+            <p><strong>Teacher's Notes:</strong> {{ student.notes }}</p>
+        </div>
+    {% endif %}
+
+<hr>
+
+    <!-- SECTION 4: CLASSROOM ROSTER -->
+    <h2>📋 Class Attendance Roster</h2>
+    <p>Here is your current class list. Use these ID numbers in the search bar above to view report cards!</p>
+
+    <table border="1" style="width: 100%; background: white; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="background: #4A4A4A; color: white;">
+                <th style="padding: 10px;">Student ID</th>
+                <th style="padding: 10px;">First Name</th>
+                <th style="padding: 10px;">Last Name</th>
+                <th style="padding: 10px;">Grade Level</th>
+                <th style="padding: 10px;">Action</th> <!-- New Column Header -->
+            </tr>
+        </thead>
+        <tbody>
+            <!-- We tell Flask to loop through every single student in our database -->
+            {% for id, details in all_students.items() %}
+            <tr>
+                <td style="padding: 10px;"><strong>{{ id }}</strong></td>
+                <td style="padding: 10px;">{{ details.first_name }}</td>
+                <td style="padding: 10px;">{{ details.last_name }}</td>
+                <td style="padding: 10px;">{{ details.grade_level }}</td>
+                <td style="padding: 10px;">
+                    <!-- A tiny inline form that passes the student ID to Python when clicked -->
+                    <form action="/delete_student/{{ id }}" method="POST" style="margin: 0;">
+                        <button type="submit" style="background: #FF4D4D; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                            Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+</body>
+</html>

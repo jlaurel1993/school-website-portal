@@ -1,0 +1,6 @@
+/* Target the <body> box (the entire page background) */
+body {
+    background-color: #E6E6FA; /* This is the official hex code for Lavender! */
+    font-family: sans-serif;   /* This makes the text look clean and modern */
+    padding: 20px;             /* Gives the content a little breathing room from the edges */
+}
