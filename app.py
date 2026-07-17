@@ -29,7 +29,8 @@ def index():
     
     cursor.close()
     conn.close()
-    return render_template('index.html', students=students, search_result=None, search_query=None)
+    # Passed as all_students to sync perfectly with your template's Jinja loop
+    return render_template('index.html', all_students=students, search_result=None, search_query=None)
 
 # --- 2. DIGITAL ENROLLMENT INTAKE (ADD) ---
 @app.route('/add', methods=['POST'])
@@ -79,7 +80,8 @@ def search_student():
     cursor.close()
     conn.close()
     
-    return render_template('index.html', students=students, search_result=search_result, search_query=search_query)
+    # Passed as all_students here as well to protect template rendering stability
+    return render_template('index.html', all_students=students, search_result=search_result, search_query=search_query)
 
 # --- 4. RECORD REMOVAL MACRO (DELETE) ---
 @app.route('/delete/<int:student_id>', methods=['POST'])
@@ -97,5 +99,4 @@ def delete_student(student_id):
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    # Local loopback engine setting; overridden automatically by Gunicorn on Render
     app.run(debug=True, host='0.0.0.0', port=5000)
