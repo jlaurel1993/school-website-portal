@@ -1,111 +1,101 @@
 from flask import Flask, render_template, request, redirect, url_for
 import mysql.connector
+import os
 
-app = Flask(__name__, template_folder='.')
+app = Flask(__name__)
 
-# This helper function opens a secure connection straight to our MySQL filing cabinet
+# Dynamic Database Connection Routing
 def get_db_connection():
+    # Looks for Render's internal network environment variable; 
+    # Defaults back to 'localhost' if you run it at home on your PC
+    db_host = os.environ.get("DB_HOST", "localhost")
+    
     return mysql.connector.connect(
-        host="localhost",
+        host=db_host,
         user="root",
         password="Gradebook2026!",
         database="classroom_db"
     )
 
-# ─── 1. THE HOME PAGE ROUTE ───
+# --- 1. MAIN LIVE ROSTER VIEW ---
 @app.route('/')
-def home():
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True) # dictionary=True makes results clean to read
-    
-    # Grab the full roster of students from our permanent table
-    cursor.execute("SELECT id, first_name, last_name, grade_level FROM students")
-    students_list = cursor.fetchall()
-    
-    # Format the data so it feeds seamlessly into our existing HTML table loop
-    all_students = {row['id']: row for row in students_list}
-    
-    cursor.close()
-    conn.close()
-    return render_template('index.html', student=None, error=None, all_students=all_students)
-
-# ─── 2. THE SEARCH ROUTE ───
-@app.route('/search', methods=['GET'])
-def search_student():
-    search_id = request.args.get('student_id')
-    
-    # We must always fetch the roster so the attendance sheet stays visible during a search
+def index():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id, first_name, last_name, grade_level FROM students")
-    all_students = {row['id']: row for row in cursor.fetchall()}
     
-    if search_id:
-        try:
-            search_id = int(search_id)
-            # Safely query the database for the matching student ID row
-            cursor.execute("SELECT * FROM students WHERE id = %s", (search_id,))
-            found_student = cursor.fetchone()
-            
-            cursor.close()
-            conn.close()
-            
-            if found_student:
-                return render_template('index.html', student=found_student, error=None, all_students=all_students)
-            else:
-                return render_template('index.html', student=None, error="Student ID not found!", all_students=all_students)
-        except ValueError:
-            cursor.close()
-            conn.close()
-            return render_template('index.html', student=None, error="Please enter a valid number.", all_students=all_students)
-            
+    # Fetch all students sorted alphabetically by last name
+    cursor.execute("SELECT * FROM students ORDER BY last_name ASC")
+    students = cursor.fetchall()
+    
     cursor.close()
     conn.close()
-    return render_template('index.html', student=None, error=None, all_students=all_students)
+    return render_template('index.html', students=students, search_result=None, search_query=None)
 
-# ─── 3. THE ADD STUDENT ROUTE ───
-@app.route('/add_student', methods=['POST'])
+# --- 2. DIGITAL ENROLLMENT INTAKE (ADD) ---
+@app.route('/add', methods=['POST'])
 def add_student():
-    # Capture everything your daughter types into the enrollment form boxes
-    first = request.form.get('first_name')
-    last = request.form.get('last_name')
+    first_name = request.form.get('first_name')
+    last_name = request.form.get('last_name')
     age = request.form.get('age')
-    grade_lvl = request.form.get('grade_level')
-    math = request.form.get('math_grade') or 'A'
-    reading = request.form.get('reading_grade') or 'A'
-    notes = request.form.get('notes') or 'No notes yet.'
+    grade_level = request.form.get('grade_level')
+    math = request.form.get('math')
+    reading = request.form.get('reading')
+    notes = request.form.get('notes')
 
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Insert a brand new row! MySQL automatically handles calculating next_id for us.
     query = """
-        INSERT INTO students (first_name, last_name, age, grade_level, math, reading, notes)
+        INSERT INTO students (first_name, last_name, age, grade_level, math, reading, notes) 
         VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
-    cursor.execute(query, (first, last, age, grade_lvl, math, reading, notes))
+    cursor.execute(query, (first_name, last_name, age, grade_level, math, reading, notes))
     
-    conn.commit() # Critical: This officially saves the new student row onto the hard drive!
+    conn.commit()
     cursor.close()
     conn.close()
     
-    return redirect(url_for('home'))
+    return redirect(url_for('index'))
 
-# ─── 4. THE DELETE STUDENT ROUTE ───
-@app.route('/delete_student/<int:student_id>', methods=['POST'])
+# --- 3. DYNAMIC SEARCH ENGINE (LOOKUP) ---
+@app.route('/search', methods=['GET'])
+def search_student():
+    search_query = request.args.get('query', '').strip()
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Fetch full roster to keep the main layout filled
+    cursor.execute("SELECT * FROM students ORDER BY last_name ASC")
+    students = cursor.fetchall()
+    
+    # Run exact or partial matching against first name or last name
+    search_result = None
+    if search_query:
+        query = "SELECT * FROM students WHERE first_name LIKE %s OR last_name LIKE %s"
+        cursor.execute(query, (f"%{search_query}%", f"%{search_query}%"))
+        search_result = cursor.fetchall()
+        
+    cursor.close()
+    conn.close()
+    
+    return render_template('index.html', students=students, search_result=search_result, search_query=search_query)
+
+# --- 4. RECORD REMOVAL MACRO (DELETE) ---
+@app.route('/delete/<int:student_id>', methods=['POST'])
 def delete_student(student_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Execute the SQL delete query targeting the specific ID
+    # Target and purge the row matching the specific unique primary ID index
     cursor.execute("DELETE FROM students WHERE id = %s", (student_id,))
     
-    conn.commit() # Lock the changes into the hard drive!
+    conn.commit()
     cursor.close()
     conn.close()
     
-    # Send her right back to the home page, where the student will be missing from the table!
-    return redirect(url_for('home'))
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    # Local loopback engine setting; overridden automatically by Gunicorn on Render
+    app.run(debug=True, host='0.0.0.0', port=5000)
