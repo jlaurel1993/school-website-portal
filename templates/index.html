@@ -100,7 +100,7 @@
         </thead>
         <tbody>
             <!-- We tell Flask to loop through every single student in our database -->
-            {% for id, details in all_students.items() %}
+            {% for student in all_students %}
             <tr>
                 <td style="padding: 10px;"><strong>{{ id }}</strong></td>
                 <td style="padding: 10px;">{{ details.first_name }}</td>
