@@ -6,10 +6,7 @@ app = Flask(__name__)
 
 # Dynamic Database Connection Routing
 def get_db_connection():
-    # Looks for Render's internal network environment variable; 
-    # Defaults back to 'localhost' if you run it at home on your PC
     db_host = os.environ.get("DB_HOST", "localhost")
-    
     return mysql.connector.connect(
         host=db_host,
         user="root",
@@ -17,23 +14,51 @@ def get_db_connection():
         database="classroom_db"
     )
 
+# --- AUTOMATIC ROSTER SEED ENGINE ---
+def seed_database_if_empty():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT COUNT(*) FROM students")
+    count = cursor.fetchone()[0]
+    
+    if count == 0:
+        default_students = [
+            ("Tia", "Laurel", 26, "5th Grade", "A", "B+", "Enjoys reading historical fiction."),
+            ("Grandma", "Laurel", 56, "5th Grade", "A-", "A", "Excellent participation in science labs."),
+            ("Noah", "Gonz", 5, "5th Grade", "B", "A-", "Requires extra time on math tests.")
+        ]
+        
+        query = """
+            INSERT INTO students (first_name, last_name, age, grade_level, math, reading, notes) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor.executemany(query, default_students)
+        conn.commit()
+        
+    cursor.close()
+    conn.close()
+
 # --- 1. MAIN LIVE ROSTER VIEW ---
 @app.route('/')
 def index():
+    try:
+        seed_database_if_empty()
+    except Exception as e:
+        print(f"Database seeding skipped: {e}")
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # Fetch all students sorted alphabetically by last name
     cursor.execute("SELECT * FROM students ORDER BY last_name ASC")
     students = cursor.fetchall()
     
     cursor.close()
     conn.close()
-    # Passed as all_students to sync perfectly with your template's Jinja loop
     return render_template('index.html', all_students=students, search_result=None, search_query=None)
 
-# --- 2. DIGITAL ENROLLMENT INTAKE (ADD) ---
-@app.route('/add', methods=['POST'])
+# --- 2. MATCHED ENROLLMENT INTAKE (CHANGED TO MATCH HTML) ---
+@app.route('/add_student', methods=['POST'])
 def add_student():
     first_name = request.form.get('first_name')
     last_name = request.form.get('last_name')
@@ -58,21 +83,27 @@ def add_student():
     
     return redirect(url_for('index'))
 
-# --- 3. DYNAMIC SEARCH ENGINE (LOOKUP) ---
+# --- 3. MATCHED SEARCH ENGINE (CHANGED TO MATCH HTML ID PATTERN) ---
 @app.route('/search', methods=['GET'])
 def search_student():
+    student_id = request.args.get('student_id', '').strip()
     search_query = request.args.get('query', '').strip()
     
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # Fetch full roster to keep the main layout filled
     cursor.execute("SELECT * FROM students ORDER BY last_name ASC")
     students = cursor.fetchall()
     
-    # Run exact or partial matching against first name or last name
     search_result = None
-    if search_query:
+    
+    # Handle if HTML searches by specific student ID selection
+    if student_id:
+        query = "SELECT * FROM students WHERE id = %s"
+        cursor.execute(query, (student_id,))
+        search_result = cursor.fetchall()
+    # Fallback to standard text search name query
+    elif search_query:
         query = "SELECT * FROM students WHERE first_name LIKE %s OR last_name LIKE %s"
         cursor.execute(query, (f"%{search_query}%", f"%{search_query}%"))
         search_result = cursor.fetchall()
@@ -80,22 +111,17 @@ def search_student():
     cursor.close()
     conn.close()
     
-    # Passed as all_students here as well to protect template rendering stability
-    return render_template('index.html', all_students=students, search_result=search_result, search_query=search_query)
+    return render_template('index.html', all_students=students, search_result=search_result, search_query=search_query or student_id)
 
-# --- 4. RECORD REMOVAL MACRO (DELETE) ---
+# --- 4. RECORD REMOVAL MACRO ---
 @app.route('/delete/<int:student_id>', methods=['POST'])
 def delete_student(student_id):
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    # Target and purge the row matching the specific unique primary ID index
     cursor.execute("DELETE FROM students WHERE id = %s", (student_id,))
-    
     conn.commit()
     cursor.close()
     conn.close()
-    
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
