@@ -71,7 +71,7 @@
             
             {% if search_result %}
                 {% for student in search_result %}
-                <div style="background: #ffffff; border: 3px solid #e6e6fa; border-radius: 12px; padding: 25px; margin-bottom: 25px; max-width: 700px; margin-left: auto; margin-right: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <div style="background: #ffffff; border: 3px solid #7209b7; border-radius: 12px; padding: 25px; margin-bottom: 25px; max-width: 700px; margin-left: auto; margin-right: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
                     
                     <!-- HEADER -->
                     <div style="text-align: center; margin-bottom: 20px;">
@@ -80,7 +80,7 @@
                     </div>
 
                     <!-- STUDENT INFO BOX -->
-                    <div style="border: 2px solid #f4d03f; border-radius: 8px; padding: 15px; margin-bottom: 20px; background: #fffdf5;">
+                    <div style="border: 2px solid #7209b7; border-radius: 8px; padding: 15px; margin-bottom: 20px; background: #fffdf5;">
                         <div style="display: flex; justify-content: space-between; font-size: 1.1rem; color: #1b6ca8; font-weight: bold;">
                             <span>Student Name: <span style="color: #333; font-weight: normal;">{{ student.first_name }} {{ student.last_name }}</span></span>
                             <span>Grade: <span style="color: #333; font-weight: normal;">{{ student.grade_level or '5th Grade' }}</span></span>
