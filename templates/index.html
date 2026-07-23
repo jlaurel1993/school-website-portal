@@ -92,32 +92,52 @@
                     <!-- SUBJECTS TABLE & METRICS -->
                     <div style="display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start;">
 
-                        <!-- ACADEMIC GRADES TABLE -->
+                        <!-- ACADEMIC GRADES TABLE WITH UPLOAD CAPABILITY -->
                         <div style="flex: 2; border: 2px solid #1b6ca8; border-radius: 6px; overflow: hidden;">
                             <div style="background-color: #1b6ca8; color: white; padding: 10px 15px; font-weight: bold; font-size: 1.05rem;">
                                 Subjects & Homework:
                             </div>
-                            <div style="display: flex; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid #1b6ca8; font-weight: bold; color: #1b6ca8;">
-                                <span>📐 Math</span>
-                                <div>
-                                    <span style="color: #333; margin-right: 10px;">{{ student.math or 'N/A' }}</span>
-                                    {% if student.math_hw_url %}
-                                        <a href="{{ student.math_hw_url }}" target="_blank" style="color: #7209b7; font-size: 0.85rem; text-decoration: underline;">📎 View Math HW</a>
-                                    {% else %}
-                                        <span style="color: #999; font-size: 0.85rem; font-weight: normal;">No HW File</span>
-                                    {% endif %}
+
+                            <!-- MATH ROW -->
+                            <div style="padding: 12px 15px; border-bottom: 1px solid #1b6ca8;">
+                                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #1b6ca8; margin-bottom: 5px;">
+                                    <span>📐 Math</span>
+                                    <div>
+                                        <span style="color: #333; margin-right: 10px;">{{ student.math or 'N/A' }}</span>
+                                        {% if student.math_hw_url %}
+                                            <a href="{{ student.math_hw_url }}" target="_blank" style="color: #7209b7; font-size: 0.85rem; text-decoration: underline;">📎 View Math HW</a>
+                                        {% else %}
+                                            <span style="color: #999; font-size: 0.85rem; font-weight: normal;">No HW File</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
+                                <!-- Direct Upload Form for Math -->
+                                <form action="/upload_hw/{{ student.id }}?query={{ search_query }}" method="POST" enctype="multipart/form-data" style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
+                                    <input type="hidden" name="subject" value="math">
+                                    <input type="file" name="hw_file" accept="image/*" required style="font-size: 0.8rem; flex: 1;">
+                                    <button type="submit" style="background-color: #7209b7; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; font-weight: bold;">Upload Math HW</button>
+                                </form>
                             </div>
-                            <div style="display: flex; justify-content: space-between; padding: 12px 15px; font-weight: bold; color: #1b6ca8;">
-                                <span>📖 Reading</span>
-                                <div>
-                                    <span style="color: #333; margin-right: 10px;">{{ student.reading or 'N/A' }}</span>
-                                    {% if student.reading_hw_url %}
-                                        <a href="{{ student.reading_hw_url }}" target="_blank" style="color: #7209b7; font-size: 0.85rem; text-decoration: underline;">📎 View Reading HW</a>
-                                    {% else %}
-                                        <span style="color: #999; font-size: 0.85rem; font-weight: normal;">No HW File</span>
-                                    {% endif %}
+
+                            <!-- READING ROW -->
+                            <div style="padding: 12px 15px;">
+                                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #1b6ca8; margin-bottom: 5px;">
+                                    <span>📖 Reading</span>
+                                    <div>
+                                        <span style="color: #333; margin-right: 10px;">{{ student.reading or 'N/A' }}</span>
+                                        {% if student.reading_hw_url %}
+                                            <a href="{{ student.reading_hw_url }}" target="_blank" style="color: #7209b7; font-size: 0.85rem; text-decoration: underline;">📎 View Reading HW</a>
+                                        {% else %}
+                                            <span style="color: #999; font-size: 0.85rem; font-weight: normal;">No HW File</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
+                                <!-- Direct Upload Form for Reading -->
+                                <form action="/upload_hw/{{ student.id }}?query={{ search_query }}" method="POST" enctype="multipart/form-data" style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
+                                    <input type="hidden" name="subject" value="reading">
+                                    <input type="file" name="hw_file" accept="image/*" required style="font-size: 0.8rem; flex: 1;">
+                                    <button type="submit" style="background-color: #7209b7; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; font-weight: bold;">Upload Reading HW</button>
+                                </form>
                             </div>
                         </div>
 

@@ -94,6 +94,35 @@ def add_student():
 
     return redirect(url_for('index'))
 
+@app.route('/upload_hw/<int:student_id>', methods=['POST'])
+def upload_hw(student_id):
+    subject = request.form.get('subject')  # 'math' or 'reading'
+    hw_file = request.files.get('hw_file')
+
+    if hw_file and hw_file.filename != '':
+        # Upload to Cloudinary
+        upload_result = cloudinary.uploader.upload(hw_file)
+        file_url = upload_result.get('secure_url')
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Update the correct column depending on which subject was picked
+        if subject == 'math':
+            cursor.execute("UPDATE students SET math_hw_url = %s WHERE id = %s", (file_url, student_id))
+        elif subject == 'reading':
+            cursor.execute("UPDATE students SET reading_hw_url = %s WHERE id = %s", (file_url, student_id))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+    # Redirect back to search view if query exists so report card stays visible
+    search_query = request.args.get('query', '')
+    if search_query:
+        return redirect(url_for('search_student', query=search_query))
+    return redirect(url_for('index'))
+
 @app.route('/search', methods=['GET'])
 def search_student():
     search_query = request.args.get('query', '').strip()
