@@ -1,8 +1,17 @@
 from flask import Flask, render_template, request, redirect, url_for
 import mysql.connector
 import os
+import cloudinary
+import cloudinary.uploader
 
 app = Flask(__name__)
+
+# Configure Cloudinary using environment variables
+cloudinary.config(
+    cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key = os.getenv('CLOUDINARY_API_KEY'),
+    api_secret = os.getenv('CLOUDINARY_API_SECRET')
+)
 
 def get_db_connection():
     db_host = os.environ.get("DB_HOST", "localhost")
@@ -25,7 +34,7 @@ def seed_database_if_empty():
             ("Marcus", "Evans", 10, "5th Grade", "B", "A-", "Requires extra time on math tests.")
         ]
         query = """
-            INSERT INTO students (first_name, last_name, age, grade_level, math, reading, notes) 
+            INSERT INTO students (first_name, last_name, age, grade_level, math, reading, notes)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
         cursor.executemany(query, default_students)
@@ -49,20 +58,40 @@ def index():
 
 @app.route('/add_student', methods=['POST'])
 def add_student():
+    first_name = request.form.get('first_name')
+    last_name = request.form.get('last_name')
+    age = request.form.get('age')
+    grade_level = request.form.get('grade_level')
+    math = request.form.get('math')
+    reading = request.form.get('reading')
+    notes = request.form.get('notes')
+
+    # Handle Math HW Image Upload
+    math_hw_file = request.files.get('math_hw')
+    math_hw_url = None
+    if math_hw_file and math_hw_file.filename != '':
+        upload_result = cloudinary.uploader.upload(math_hw_file)
+        math_hw_url = upload_result.get('secure_url')
+
+    # Handle Reading HW Image Upload
+    reading_hw_file = request.files.get('reading_hw')
+    reading_hw_url = None
+    if reading_hw_file and reading_hw_file.filename != '':
+        upload_result = cloudinary.uploader.upload(reading_hw_file)
+        reading_hw_url = upload_result.get('secure_url')
+
+    # Save student record with homework URLs to MySQL
     conn = get_db_connection()
     cursor = conn.cursor()
     query = """
-        INSERT INTO students (first_name, last_name, age, grade_level, math, reading, notes) 
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO students (first_name, last_name, age, grade_level, math, reading, notes, math_hw_url, reading_hw_url)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    cursor.execute(query, (
-        request.form.get('first_name'), request.form.get('last_name'),
-        request.form.get('age'), request.form.get('grade_level'),
-        request.form.get('math'), request.form.get('reading'), request.form.get('notes')
-    ))
+    cursor.execute(query, (first_name, last_name, age, grade_level, math, reading, notes, math_hw_url, reading_hw_url))
     conn.commit()
     cursor.close()
     conn.close()
+
     return redirect(url_for('index'))
 
 @app.route('/search', methods=['GET'])
