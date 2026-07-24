@@ -36,12 +36,12 @@
                     <input type="text" name="grade_level" placeholder="e.g. 5th Grade" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box;">
                 </div>
                 <div>
-                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Math Grade & HW</label>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Math Grade & Initial HW</label>
                     <input type="text" name="math" placeholder="Grade (e.g. A)" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box;">
                     <input type="file" name="math_hw" accept="image/*" style="margin-top: 5px; font-size: 0.85rem; width: 100%;">
                 </div>
                 <div>
-                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Reading Grade & HW</label>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Reading Grade & Initial HW</label>
                     <input type="text" name="reading" placeholder="Grade (e.g. B+)" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box;">
                     <input type="file" name="reading_hw" accept="image/*" style="margin-top: 5px; font-size: 0.85rem; width: 100%;">
                 </div>
@@ -89,54 +89,71 @@
                         </div>
                     </div>
 
-                    <!-- SUBJECTS TABLE & METRICS -->
+                    <!-- SUBJECTS TABLE & MULTIPLE HOMEWORK LIST -->
                     <div style="display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start;">
 
-                        <!-- ACADEMIC GRADES TABLE WITH UPLOAD CAPABILITY -->
                         <div style="flex: 2; border: 2px solid #1b6ca8; border-radius: 6px; overflow: hidden;">
                             <div style="background-color: #1b6ca8; color: white; padding: 10px 15px; font-weight: bold; font-size: 1.05rem;">
-                                Subjects & Homework:
+                                Subjects & Homework History:
                             </div>
 
                             <!-- MATH ROW -->
                             <div style="padding: 12px 15px; border-bottom: 1px solid #1b6ca8;">
                                 <div style="display: flex; justify-content: space-between; font-weight: bold; color: #1b6ca8; margin-bottom: 5px;">
-                                    <span>📐 Math</span>
-                                    <div>
-                                        <span style="color: #333; margin-right: 10px;">{{ student.math or 'N/A' }}</span>
-                                        {% if student.math_hw_url %}
-                                            <a href="{{ student.math_hw_url }}" target="_blank" style="color: #7209b7; font-size: 0.85rem; text-decoration: underline;">📎 View Math HW</a>
-                                        {% else %}
-                                            <span style="color: #999; font-size: 0.85rem; font-weight: normal;">No HW File</span>
-                                        {% endif %}
-                                    </div>
+                                    <span>📐 Math Grade: {{ student.math or 'N/A' }}</span>
                                 </div>
-                                <!-- Direct Upload Form for Math -->
+
+                                <!-- Saved Math Homework Files List -->
+                                <div style="margin-bottom: 8px; font-size: 0.85rem;">
+                                    <strong style="color: #555;">Uploaded Submissions:</strong>
+                                    {% if student.math_hw_list %}
+                                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;">
+                                            {% for hw in student.math_hw_list %}
+                                                <a href="{{ hw.file_url }}" target="_blank" style="background: #e6e6fa; color: #7209b7; padding: 4px 8px; border-radius: 4px; text-decoration: none; border: 1px solid #7209b7;">
+                                                    📎 Submission #{{ loop.index }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <span style="color: #999; font-style: italic;"> No files uploaded yet.</span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Upload Form for Math -->
                                 <form action="/upload_hw/{{ student.id }}?query={{ search_query }}" method="POST" enctype="multipart/form-data" style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
                                     <input type="hidden" name="subject" value="math">
                                     <input type="file" name="hw_file" accept="image/*" required style="font-size: 0.8rem; flex: 1;">
-                                    <button type="submit" style="background-color: #7209b7; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; font-weight: bold;">Upload Math HW</button>
+                                    <button type="submit" style="background-color: #7209b7; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; font-weight: bold;">+ Add Math HW</button>
                                 </form>
                             </div>
 
                             <!-- READING ROW -->
                             <div style="padding: 12px 15px;">
                                 <div style="display: flex; justify-content: space-between; font-weight: bold; color: #1b6ca8; margin-bottom: 5px;">
-                                    <span>📖 Reading</span>
-                                    <div>
-                                        <span style="color: #333; margin-right: 10px;">{{ student.reading or 'N/A' }}</span>
-                                        {% if student.reading_hw_url %}
-                                            <a href="{{ student.reading_hw_url }}" target="_blank" style="color: #7209b7; font-size: 0.85rem; text-decoration: underline;">📎 View Reading HW</a>
-                                        {% else %}
-                                            <span style="color: #999; font-size: 0.85rem; font-weight: normal;">No HW File</span>
-                                        {% endif %}
-                                    </div>
+                                    <span>📖 Reading Grade: {{ student.reading or 'N/A' }}</span>
                                 </div>
-                                <!-- Direct Upload Form for Reading -->
+
+                                <!-- Saved Reading Homework Files List -->
+                                <div style="margin-bottom: 8px; font-size: 0.85rem;">
+                                    <strong style="color: #555;">Uploaded Submissions:</strong>
+                                    {% if student.reading_hw_list %}
+                                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;">
+                                            {% for hw in student.reading_hw_list %}
+                                                <a href="{{ hw.file_url }}" target="_blank" style="background: #e6e6fa; color: #7209b7; padding: 4px 8px; border-radius: 4px; text-decoration: none; border: 1px solid #7209b7;">
+                                                    📎 Submission #{{ loop.index }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <span style="color: #999; font-style: italic;"> No files uploaded yet.</span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Upload Form for Reading -->
                                 <form action="/upload_hw/{{ student.id }}?query={{ search_query }}" method="POST" enctype="multipart/form-data" style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
                                     <input type="hidden" name="subject" value="reading">
                                     <input type="file" name="hw_file" accept="image/*" required style="font-size: 0.8rem; flex: 1;">
-                                    <button type="submit" style="background-color: #7209b7; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; font-weight: bold;">Upload Reading HW</button>
+                                    <button type="submit" style="background-color: #7209b7; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; font-weight: bold;">+ Add Reading HW</button>
                                 </form>
                             </div>
                         </div>
@@ -175,7 +192,7 @@
                         <th style="padding: 12px 10px;">Class</th>
                         <th style="padding: 12px 10px;">Math</th>
                         <th style="padding: 12px 10px;">Reading</th>
-                        <th style="padding: 12px 10px;">HW Files</th>
+                        <th style="padding: 12px 10px;">All Homework Submissions</th>
                         <th style="padding: 12px 10px;">Notes</th>
                         <th style="padding: 12px 10px; text-align: center;">Actions</th>
                     </tr>
@@ -189,13 +206,13 @@
                         <td style="padding: 10px; font-weight: bold; color: #7209b7;">{{ student.math or '-' }}</td>
                         <td style="padding: 10px; font-weight: bold; color: #7209b7;">{{ student.reading or '-' }}</td>
                         <td style="padding: 10px; font-size: 0.85rem;">
-                            {% if student.math_hw_url %}
-                                <a href="{{ student.math_hw_url }}" target="_blank" style="color: #7209b7; display: block;">📎 Math HW</a>
-                            {% endif %}
-                            {% if student.reading_hw_url %}
-                                <a href="{{ student.reading_hw_url }}" target="_blank" style="color: #7209b7; display: block;">📎 Reading HW</a>
-                            {% endif %}
-                            {% if not student.math_hw_url and not student.reading_hw_url %}
+                            {% for hw in student.math_hw_list %}
+                                <a href="{{ hw.file_url }}" target="_blank" style="color: #7209b7; display: block;">📎 Math Submission #{{ loop.index }}</a>
+                            {% endfor %}
+                            {% for hw in student.reading_hw_list %}
+                                <a href="{{ hw.file_url }}" target="_blank" style="color: #7209b7; display: block;">📎 Reading Submission #{{ loop.index }}</a>
+                            {% endfor %}
+                            {% if not student.math_hw_list and not student.reading_hw_list %}
                                 <span style="color: #999;">-</span>
                             {% endif %}
                         </td>
