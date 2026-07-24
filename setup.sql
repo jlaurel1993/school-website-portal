@@ -19,6 +19,16 @@ CREATE TABLE IF NOT EXISTS students (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 4. Create new hw table where each row represents one uploaded homework
+CREATE TABLE IF NOT EXISTS homework (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    subject VARCHAR(20) NOT NULL,
+    file_url TEXT NOT NULL,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
 -- 4. Clear out any old rows and add the 3 starting students
 TRUNCATE TABLE students;
 INSERT INTO students (first_name, last_name, age, grade_level, math, reading, notes) VALUES
