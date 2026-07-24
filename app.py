@@ -54,7 +54,6 @@ def attach_homework_to_students(students, cursor):
     cursor.execute(hw_query, tuple(student_ids))
     hw_records = cursor.fetchall()
     
-    # Map homework records to student IDs
     hw_by_student = {}
     for record in hw_records:
         sid = record['student_id']
@@ -81,9 +80,7 @@ def index():
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM students ORDER BY last_name ASC")
     students = cursor.fetchall()
-    
     students = attach_homework_to_students(students, cursor)
-    
     cursor.close()
     conn.close()
     return render_template('index.html', all_students=students, search_result=None, search_query=None)
@@ -108,7 +105,6 @@ def add_student():
     cursor.execute(query, (first_name, last_name, age, grade_level, math, reading, notes))
     student_id = cursor.lastrowid
 
-    # Handle optional Math HW upload on enrollment
     math_hw_file = request.files.get('math_hw')
     if math_hw_file and math_hw_file.filename != '':
         upload_result = cloudinary.uploader.upload(math_hw_file)
@@ -116,7 +112,6 @@ def add_student():
         cursor.execute("INSERT INTO homework (student_id, subject, file_url) VALUES (%s, %s, %s)",
                        (student_id, 'math', file_url))
 
-    # Handle optional Reading HW upload on enrollment
     reading_hw_file = request.files.get('reading_hw')
     if reading_hw_file and reading_hw_file.filename != '':
         upload_result = cloudinary.uploader.upload(reading_hw_file)
@@ -127,12 +122,11 @@ def add_student():
     conn.commit()
     cursor.close()
     conn.close()
-
     return redirect(url_for('index'))
 
 @app.route('/upload_hw/<int:student_id>', methods=['POST'])
 def upload_hw(student_id):
-    subject = request.form.get('subject')  # 'math' or 'reading'
+    subject = request.form.get('subject')
     hw_file = request.files.get('hw_file')
 
     if hw_file and hw_file.filename != '':
@@ -146,6 +140,46 @@ def upload_hw(student_id):
         conn.commit()
         cursor.close()
         conn.close()
+
+    search_query = request.args.get('query', '')
+    if search_query:
+        return redirect(url_for('search_student', query=search_query))
+    return redirect(url_for('index'))
+
+@app.route('/delete_hw/<int:hw_id>', methods=['POST'])
+def delete_hw(hw_id):
+    """Deletes an individual homework file record."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM homework WHERE id = %s", (hw_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    search_query = request.args.get('query', '')
+    if search_query:
+        return redirect(url_for('search_student', query=search_query))
+    return redirect(url_for('index'))
+
+@app.route('/update_student/<int:student_id>', methods=['POST'])
+def update_student(student_id):
+    """Updates student grades, grade level, age, and teacher notes."""
+    math = request.form.get('math')
+    reading = request.form.get('reading')
+    grade_level = request.form.get('grade_level')
+    notes = request.form.get('notes')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    query = """
+        UPDATE students 
+        SET math = %s, reading = %s, grade_level = %s, notes = %s 
+        WHERE id = %s
+    """
+    cursor.execute(query, (math, reading, grade_level, notes, student_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
 
     search_query = request.args.get('query', '')
     if search_query:
